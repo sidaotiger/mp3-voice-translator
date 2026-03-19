@@ -1,0 +1,16 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+mp3_voice_translator.egg-info/PKG-INFO
+mp3_voice_translator.egg-info/SOURCES.txt
+mp3_voice_translator.egg-info/dependency_links.txt
+mp3_voice_translator.egg-info/entry_points.txt
+mp3_voice_translator.egg-info/requires.txt
+mp3_voice_translator.egg-info/top_level.txt
+translator/__init__.py
+translator/audio.py
+translator/minimax_tts.py
+translator/translator.py
+translator/tts.py
+translator/whisper.py

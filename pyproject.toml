@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mp3-voice-translator"
+version = "0.1.1"
+description = "将中文MP3语音翻译并转换为英文语音的工具"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "sidaotiger"}
+]
+requires-python = ">=3.8"
+dependencies = [
+    "openai>=1.0.0",
+    "whisper",
+    "edge-tts",
+    "ffmpeg-python",
+    "tqdm",
+]
+
+[project.scripts]
+mp3-translator = "main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
