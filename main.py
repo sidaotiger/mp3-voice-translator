@@ -44,9 +44,14 @@ async def process_file(input_path: str, output_path: str, config):
     print(f"\n📄 处理: {Path(input_path).name}")
     
     try:
-        # 1. 语音识别
+        # 获取 API 配置
+        api_base = getattr(config, 'API_BASE_URL', 'https://api.minimax.chat/v1')
+        
+        # 1. 语音识别 (使用硅基流动)
         print("  🎤 语音识别中...")
-        stt = WhisperSTT(config.OPENAI_API_KEY, config.WHISPER_MODEL)
+        whisper_api_key = getattr(config, 'WHISPER_API_KEY', config.OPENAI_API_KEY)
+        whisper_api_base = getattr(config, 'WHISPER_API_BASE', 'https://api.siliconflow.cn/v1')
+        stt = WhisperSTT(whisper_api_key, config.WHISPER_MODEL, whisper_api_base)
         chinese_text = await stt.transcribe(input_path)
         if not chinese_text:
             print("  ⚠️ 未能识别到语音，跳过")
@@ -55,13 +60,13 @@ async def process_file(input_path: str, output_path: str, config):
         
         # 2. 翻译
         print("  🌐 翻译中...")
-        translator = Translator(config.OPENAI_API_KEY, config.TRANSLATION_SYSTEM_PROMPT)
+        translator = Translator(config.OPENAI_API_KEY, getattr(config, 'TRANSLATION_MODEL', 'abab6.5s-chat'), api_base)
         english_text = await translator.translate(chinese_text)
         print(f"  📝 翻译: {english_text[:80]}...")
         
-        # 3. TTS
-        print("  🔊 生成语音中...")
-        tts = EdgeTTS(config.TTS_VOICE, config.TTS_RATE, config.TTS_PITCH)
+        # 3. TTS (Edge TTS)
+        print("  🔊 生成语音中 (Edge TTS)...")
+        tts = EdgeTTS("en-US-AriaNeural", "+0%", "+0Hz")
         temp_tts = output_path.replace(".mp3", "_temp.mp3")
         await tts.speak(english_text, temp_tts)
         
@@ -73,6 +78,10 @@ async def process_file(input_path: str, output_path: str, config):
         # 清理临时文件
         if os.path.exists(temp_tts):
             os.remove(temp_tts)
+        
+        # 检查文件是否生成成功
+        if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            raise Exception("TTS output file not found")
         
         print(f"  ✅ 完成!")
         return True
@@ -121,11 +130,8 @@ async def main():
     print(f"🤖 Whisper: {args.model}")
     print(f"🔊 TTS: {args.voice}")
     
-    # 确认
-    response = input("\n开始处理? (y/n): ")
-    if response.lower() != 'y':
-        print("已取消")
-        return
+    # 自动确认继续
+    print("\n[自动确认] 开始处理...")
     
     # 处理
     success = 0

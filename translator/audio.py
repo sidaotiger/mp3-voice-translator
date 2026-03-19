@@ -21,18 +21,35 @@ class AudioProcessor:
         except (subprocess.CalledProcessError, FileNotFoundError):
             raise Exception("ffmpeg 未安装，请先安装 ffmpeg 并加入 PATH")
         
-        # 使用 ffmpeg 替换音频
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", original_audio,
-            "-i", new_audio,
-            "-map", "0:v",       # 保留原视频轨道
-            "-map", "1:a",       # 使用新音频
-            "-c:v", "copy",      # 视频直接复制
-            "-c:a", "aac",       # 音频转 AAC
-            "-shortest",         # 取较短者
-            output_path
-        ]
+        # 检查原文件是否有视频流
+        check_cmd = ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", original_audio]
+        check_result = subprocess.run(check_cmd, capture_output=True, text=True)
+        has_video = "video" in check_result.stdout.lower()
+        
+        if has_video:
+            # 原文件有视频：替换音轨
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", original_audio,
+                "-i", new_audio,
+                "-map", "0:v",       # 保留原视频轨道
+                "-map", "1:a",       # 使用新音频
+                "-c:v", "copy",      # 视频直接复制
+                "-c:a", "aac",       # 音频转 AAC
+                "-shortest",         # 取较短者
+                output_path
+            ]
+        else:
+            # 纯音频：直接用新音频重新编码（标准格式）
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", new_audio,
+                "-acodec", "libmp3lame",
+                "-ar", "44100",      # 标准采样率
+                "-ac", "2",           # 立体声
+                "-ab", "128k",
+                output_path
+            ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         
